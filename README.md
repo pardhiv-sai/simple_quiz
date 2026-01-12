@@ -37,8 +37,8 @@ A modern, responsive quiz application built with Python Flask and Supabase.
 1. **Clone the repository** (or download the files):
 
    ```bash
-   git clone <repository-url>
-   cd simple_quiz_website
+   git clone https://github.com/pardhiv-sai/simple_quiz.git
+   cd simple_quiz
    ```
 2. **Create and activate a virtual environment**:
 
@@ -66,7 +66,7 @@ A modern, responsive quiz application built with Python Flask and Supabase.
      ```env
      SUPABASE_URL=your_supabase_project_url
      SUPABASE_KEY=your_supabase_anon_key
-     ADMIN_USERNAME=admin
+     ADMIN_USERNAME=admin_username
      ADMIN_PASSWORD=your_secure_password
      FLASK_SECRET_KEY=your_secret_key
      ```
