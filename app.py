@@ -422,12 +422,17 @@ def take_quiz(quiz_id):
 def submit_quiz(quiz_id):
     user_id = session.get('user_id')
     
-    q_res = supabase.table('quizzes').select('allow_reattempts').eq('id', quiz_id).execute()
-    if q_res.data and not q_res.data[0].get('allow_reattempts'):
-        res_check = supabase.table('results').select('id').eq('quiz_id', quiz_id).eq('user_id', user_id).execute()
-        if res_check.data:
-            flash('Reattempts not allowed.', 'error')
-            return redirect(url_for('user_dashboard'))
+    q_res = supabase.table('quizzes').select('allow_reattempts, show_score').eq('id', quiz_id).execute()
+    if q_res.data:
+        quiz_data = q_res.data[0]
+        if not quiz_data.get('allow_reattempts'):
+            res_check = supabase.table('results').select('id').eq('quiz_id', quiz_id).eq('user_id', user_id).execute()
+            if res_check.data:
+                flash('Reattempts not allowed.', 'error')
+                return redirect(url_for('user_dashboard'))
+        show_score = quiz_data.get('show_score', False)
+    else:
+        show_score = False
 
     qs_res = supabase.table('questions').select('id, options(id, is_correct)').eq('quiz_id', quiz_id).execute()
     questions = qs_res.data
@@ -476,7 +481,7 @@ def submit_quiz(quiz_id):
             
             supabase.table('user_answers').insert(user_answers_to_insert).execute()
         
-        return render_template('result.html', score=score, total=total_questions, quiz_id=quiz_id)
+        return render_template('result.html', score=score, total=total_questions, quiz_id=quiz_id, show_score=show_score)
         
     except Exception as e:
         flash(f'Error submitting quiz: {e}', 'error')

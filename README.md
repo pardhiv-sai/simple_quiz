@@ -1,4 +1,4 @@
-# Simple Quiz Website
+# QuizMaster
 
 A modern, responsive quiz application built with Python Flask and Supabase.
 
