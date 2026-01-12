@@ -7,12 +7,10 @@
     <title>QuizMaster</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
@@ -61,14 +59,12 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script>
-        // Simple Toast Notification
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast show';
             toast.textContent = message;
 
-            // Simple visual difference for errors, could be enhanced via CSS classes if needed
             if (type === 'error') {
                 toast.style.borderLeft = "4px solid var(--danger-color, #ef4444)";
             }
