@@ -59,7 +59,7 @@ def login():
 
         if username == os.getenv('ADMIN_USERNAME') and password == os.getenv('ADMIN_PASSWORD'):
             session['is_admin'] = True
-            session['username'] = 'admin'
+            session['username'] = 'Admin'
             flash('Logged in as Admin.', 'success')
             return redirect(url_for('admin_dashboard'))
         elif username == os.getenv('ADMIN_USERNAME'):
@@ -71,21 +71,12 @@ def login():
             user = res.data[0] if res.data else None
             
             if user:
-                # Existing user: Verify password
-                # Handle legacy users with no password (if any remain) by allowing reset or blocking
-                # Here we assume DB migration + clear was done or nulls handled.
-                # If password is None in DB (old user), let's allow them to set it? 
-                # Or just checking: if no password set, maybe update it? 
-                # For SECURITY: strict check. If null, fail or ask admin. 
-                # Given dev context: if null, update it? No, let's treat as fail invalid password.
                 if user.get('password') and check_password_hash(user['password'], password):
                      session['user_id'] = user['id']
                      session['username'] = user['username']
                      flash('Welcome back!', 'success')
                      return redirect(url_for('user_dashboard'))
                 elif not user.get('password'):
-                     # Migration strategy: If user has no password, let them 'claim' the account
-                     # This is a dev convenience.
                      hashed_pw = generate_password_hash(password)
                      supabase.table('users').update({'password': hashed_pw}).eq('id', user['id']).execute()
                      session['user_id'] = user['id']
@@ -95,7 +86,6 @@ def login():
                 else:
                     flash('Invalid password.', 'error')
             else:
-                # New user: Register
                 hashed_pw = generate_password_hash(password)
                 res = supabase.table('users').insert({'username': username, 'password': hashed_pw}).execute()
                 new_user = res.data[0]
@@ -223,7 +213,7 @@ def create_quiz():
         seconds = int(request.form.get('seconds', 0))
         duration = (hours * 3600) + (minutes * 60) + seconds
     except ValueError:
-        duration = 600 # Default to 10 minutes (600 seconds) if parsing fails
+        duration = 600
 
     try:
         res = supabase.table('quizzes').insert({
@@ -493,5 +483,4 @@ def submit_quiz(quiz_id):
         return redirect(url_for('user_dashboard'))
 
 if __name__ == '__main__':
-    # Production: Debug=False
     app.run(host="0.0.0.0", port=8000, debug=True)
