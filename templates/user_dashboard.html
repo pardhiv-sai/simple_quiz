@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-6">
+    <h2>Available Quizzes</h2>
+    <p>Select a quiz to test your knowledge.</p>
+</div>
+
+<div class="grid grid-cols-1 grid-cols-2 grid-cols-3">
+    {% for quiz in quizzes %}
+    <div class="card" style="display: flex; flex-direction: column; height: 100%; margin-bottom: 0;">
+        <h3>{{ quiz.title }}</h3>
+        <p style="flex-grow: 1;">{{ quiz.description }}</p>
+        <div class="mt-4">
+            <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn btn-primary btn-block">Take Quiz</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card text-center" style="grid-column: 1 / -1;">
+        <h3>No Quizzes available yet</h3>
+        <p>Please check back later!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

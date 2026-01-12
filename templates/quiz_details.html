@@ -1,0 +1,522 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline btn-sm mb-4">
+            &larr; Back to Dashboard
+        </a>
+        <h2>{{ quiz.title }}</h2>
+        <p>{{ quiz.description }}</p>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<div class="tabs-nav">
+    <button onclick="switchTab('questions')" id="tab-questions" class="tab-btn active">Questions</button>
+    <button onclick="switchTab('responses')" id="tab-responses" class="tab-btn">Responses</button>
+    <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn">Settings</button>
+</div>
+
+<!-- Questions Tab -->
+<div id="content-questions" class="tab-content active">
+    <!-- Add Question Section -->
+    <div class="card">
+        <div class="flex justify-between items-center mb-4">
+            <h3>Questions</h3>
+            <button id="showAddFormBtn" onclick="toggleAddForm()" class="btn btn-primary">Add Question</button>
+        </div>
+
+        <div id="add-question-form"
+            style="display:none; background: var(--slate-50); padding: var(--space-6); border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: var(--space-6);">
+            <h4 class="mt-0 mb-4" id="formTitle">Add New Question</h4>
+            <form id="addQuestionForm" onsubmit="handleQuestionSubmit(event)" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Question Text</label>
+                    <input type="text" name="question_text" required placeholder="Enter question here...">
+                </div>
+
+                <div class="form-group">
+                    <label>Question Image (Optional)</label>
+                    <input type="file" name="image" accept="image/*" class="form-control">
+                </div>
+
+                <div class="grid grid-cols-2" style="gap: var(--space-4);">
+                    <div class="form-group">
+                        <label class="flex items-center gap-2">
+                            <span>Option 1</span>
+                            <input type="checkbox" name="is_correct_1" title="Mark as correct"
+                                style="width:auto; margin:0;">
+                        </label>
+                        <input type="text" name="option_1" required placeholder="Option 1">
+                    </div>
+                    <div class="form-group">
+                        <label class="flex items-center gap-2">
+                            <span>Option 2</span>
+                            <input type="checkbox" name="is_correct_2" title="Mark as correct"
+                                style="width:auto; margin:0;">
+                        </label>
+                        <input type="text" name="option_2" required placeholder="Option 2">
+                    </div>
+                    <div class="form-group">
+                        <label class="flex items-center gap-2">
+                            <span>Option 3</span>
+                            <input type="checkbox" name="is_correct_3" title="Mark as correct"
+                                style="width:auto; margin:0;">
+                        </label>
+                        <input type="text" name="option_3" required placeholder="Option 3">
+                    </div>
+                    <div class="form-group">
+                        <label class="flex items-center gap-2">
+                            <span>Option 4</span>
+                            <input type="checkbox" name="is_correct_4" title="Mark as correct"
+                                style="width:auto; margin:0;">
+                        </label>
+                        <input type="text" name="option_4" required placeholder="Option 4">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button type="submit" id="formSubmitBtn" class="btn btn-primary">Save Question</button>
+                    <button type="button" class="btn btn-outline" onclick="toggleAddForm(false)">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <ul id="questionsList" style="list-style-type: none; padding: 0;">
+            {% for q in questions %}
+            <li id="question-{{ q.id }}" class="question-card mb-6">
+                <!-- Card Header -->
+                <div class="flex justify-between items-start mb-4 border-b pb-3 border-slate-100">
+                    <h4 class="text-lg font-semibold m-0 text-slate-800" style="flex: 1; margin-right: 12px;">{{ q.text
+                        }}</h4>
+                    <div class="flex gap-2">
+                        <button class="btn btn-sm btn-primary" onclick='editQuestion("{{ q.id }}")' title="Edit"
+                            style="margin-right: 5px; background-color: #4f46e5; color: white; border: 1px solid #4f46e5;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                style="margin-right: 4px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                            Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline text-danger border-danger hover:bg-red-50"
+                            onclick="deleteQuestion('{{ q.id }}')" title="Delete">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Image (if any) -->
+                {% if q.image_url %}
+                <div class="mb-4">
+                    <img src="{{ q.image_url }}" alt="Question Image" class="rounded-lg border border-slate-200"
+                        style="max-height: 200px; max-width: 100%; object-fit: cover;">
+                </div>
+                {% endif %}
+
+                <!-- Options Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {% for opt in q.options %}
+                    <div
+                        class="flex items-center p-3 rounded-md border text-sm {{ 'bg-green-50 border-green-200 text-green-800 font-medium' if opt.is_correct else 'bg-white border-slate-200 text-slate-600' }}">
+                        <div class="flex-shrink-0 mr-3">
+                            {% if opt.is_correct %}
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0"></path>
+                            </svg>
+                            {% else %}
+                            <div class="w-5 h-5 rounded-full border border-slate-300"></div>
+                            {% endif %}
+                        </div>
+                        <span>{{ opt.text }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <p id="noQuestionsMsg" class="text-center py-8 text-muted"
+            style="display: {{ 'none' if questions else 'block' }}">
+            No questions yet. Add one to get started!
+        </p>
+    </div>
+</div>
+
+<!-- Responses Tab -->
+<div id="content-responses" class="tab-content">
+    <div class="card">
+        <h3>User Responses</h3>
+        {% if results %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">User</th>
+                        <th style="width: 30%;">Score</th>
+                        <th style="width: 40%;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('admin_result_details', result_id=r.id) }}"
+                                class="text-primary font-semibold hover:underline">
+                                {{ r.users.username if r.users else 'Unknown' }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="font-bold text-primary">{{ r.score }} / {{ r.total_questions }}</span>
+                            <span class="text-sm text-muted ml-2">({{ (r.score / r.total_questions * 100)|round(1)
+                                }}%)</span>
+                        </td>
+                        <td>{{ r.completed_at | to_ist }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center py-8 text-muted">No responses yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Settings Tab -->
+<div id="content-settings" class="tab-content">
+    <div class="card">
+        <h3>Quiz Settings</h3>
+
+        <!-- Duration Settings -->
+        <form id="settingsForm" class="mb-6 pb-6 border-b">
+            <h4 class="mb-4">Timer Duration</h4>
+            <div class="form-group">
+                <div class="time-input-group">
+                    <div class="time-unit">
+                        <input type="number" name="hours" min="0" required id="duration_h" placeholder="00">
+                        <label>Hours</label>
+                    </div>
+                    <div class="time-separator">:</div>
+                    <div class="time-unit">
+                        <input type="number" name="minutes" min="0" required id="duration_m" placeholder="00">
+                        <label>Mins</label>
+                    </div>
+                    <div class="time-separator">:</div>
+                    <div class="time-unit">
+                        <input type="number" name="seconds" min="0" required id="duration_s" placeholder="00">
+                        <label>Secs</label>
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="saveDuration()" class="btn btn-primary">Update Duration</button>
+        </form>
+
+        <h4 class="mb-4">General Options</h4>
+        <label
+            class="flex items-center gap-4 p-4 border rounded-lg mb-4 cursor-pointer hover:bg-slate-50 transition-colors">
+            <input type="checkbox" id="showScoreToggle" class="w-5 h-5" {% if quiz.show_score %}checked{% endif %}>
+            <div>
+                <span class="block font-semibold">Show Score to Users</span>
+                <span class="text-sm text-muted font-normal">If enabled, users will see their score immediately after
+                    submission.</span>
+            </div>
+        </label>
+
+        <label class="flex items-center gap-4 p-4 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+            <input type="checkbox" id="reattemptToggle" class="w-5 h-5" {% if quiz.allow_reattempts %}checked{% endif
+                %}>
+            <div>
+                <span class="block font-semibold">Allow Reattempts</span>
+                <span class="text-sm text-muted font-normal">If enabled, users can take this quiz multiple times.</span>
+            </div>
+        </label>
+    </div>
+</div>
+
+<script>
+    const quizId = "{{ quiz.id }}";
+
+    // Initial Questions Data Map
+    const questionsMap = {};
+    {% for q in questions %}
+    questionsMap["{{ q.id }}"] = {{ q | tojson }};
+    {% endfor %}
+
+    // Duration Logic
+    const totalSeconds = {{ quiz.duration|default (600) }};
+    document.getElementById('duration_h').value = Math.floor(totalSeconds / 3600);
+    document.getElementById('duration_m').value = Math.floor((totalSeconds % 3600) / 60);
+    document.getElementById('duration_s').value = totalSeconds % 60;
+
+    function saveDuration() {
+        const h = parseInt(document.getElementById('duration_h').value) || 0;
+        const m = parseInt(document.getElementById('duration_m').value) || 0;
+        const s = parseInt(document.getElementById('duration_s').value) || 0;
+
+        fetch(`/admin/update_quiz_settings/${quizId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hours: h, minutes: m, seconds: s })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Duration updated!', 'success');
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+            });
+    }
+
+    function switchTab(tabName) {
+        // Hide all
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        // Show active
+        document.getElementById(`content-${tabName}`).classList.add('active');
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+
+    // Question Management
+    let editingId = null;
+
+    function toggleAddForm(show = null) {
+        const form = document.getElementById('add-question-form');
+        const btn = document.getElementById('showAddFormBtn');
+        const isVisible = form.style.display !== 'none';
+        const shouldShow = show !== null ? show : !isVisible;
+
+        form.style.display = shouldShow ? 'block' : 'none';
+        btn.style.display = shouldShow ? 'none' : 'inline-block';
+
+        if (!shouldShow) {
+            resetForm();
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('addQuestionForm').reset();
+        document.getElementById('formTitle').innerText = "Add New Question";
+        document.getElementById('formSubmitBtn').innerText = "Save Question";
+        editingId = null;
+    }
+
+    function editQuestion(qId) {
+        const q = questionsMap[qId];
+        if (!q) {
+            showToast("Error: Question data not found.", "error");
+            return;
+        }
+
+        editingId = qId;
+        document.getElementById('formTitle').innerText = "Edit Question";
+        toggleAddForm(true); // Show form
+
+        const form = document.getElementById('addQuestionForm');
+        form.question_text.value = q.text;
+
+        // Populate options
+        if (q.options && q.options.length) {
+            q.options.forEach((opt, idx) => {
+                const i = idx + 1; // 1-based inputs
+                if (form[`option_${i}`]) form[`option_${i}`].value = opt.text;
+                if (form[`is_correct_${i}`]) form[`is_correct_${i}`].checked = opt.is_correct;
+            });
+        }
+
+        document.getElementById('formSubmitBtn').innerText = "Update Question";
+        // Scroll to form
+        form.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function handleQuestionSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerText;
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Applying... ⏳";
+
+        const url = editingId
+            ? `/admin/update_question/${editingId}`
+            : `{{ url_for('add_question', quiz_id=quiz.id) }}`;
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData
+        })
+            .then(response => response.json())
+            .then(res => {
+                if (res.success) {
+                    showToast(editingId ? 'Question updated!' : 'Question added!', 'success');
+
+                    const q = res.question;
+                    questionsMap[q.id] = q; // Update Map
+
+                    if (editingId) {
+                        const existingLi = document.getElementById(`question-${editingId}`);
+                        if (existingLi) existingLi.remove();
+                    }
+
+                    // Add new/updated card
+                    renderQuestionCard(q, editingId);
+
+                    resetForm();
+                    toggleAddForm(false);
+                    document.getElementById('noQuestionsMsg').style.display = 'none';
+                } else {
+                    showToast('Error: ' + (res.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Network Error: ' + err, 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalBtnText;
+            });
+    }
+
+    function renderQuestionCard(q, wasEditingId = null) {
+        const li = document.createElement('li');
+        li.id = `question-${q.id}`;
+        li.className = "question-card mb-6";
+
+        // Options HTML
+        let optionsHtml = '';
+        q.options.forEach(opt => {
+            const isCorrect = opt.is_correct;
+            const baseClass = "flex items-center p-3 rounded-md border text-sm";
+            const themeClass = isCorrect
+                ? "bg-green-50 border-green-200 text-green-800 font-medium"
+                : "bg-white border-slate-200 text-slate-600";
+
+            const icon = isCorrect
+                ? `<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0"></path></svg>`
+                : `<div class="w-5 h-5 rounded-full border border-slate-300"></div>`;
+
+            optionsHtml += `
+                 <div class="${baseClass} ${themeClass}">
+                     <div class="flex-shrink-0 mr-3">${icon}</div>
+                     <span>${opt.text}</span>
+                 </div>`;
+        });
+
+        // Image HTML
+        let imageHtml = '';
+        if (q.image_url) {
+            const ts = new Date().getTime(); // Cache bust
+            imageHtml = `<div class="mb-4">
+                 <img src="${q.image_url}?t=${ts}" alt="Question Image" class="rounded-lg border border-slate-200" style="max-height: 200px; max-width: 100%; object-fit: cover;">
+             </div>`;
+        }
+
+        li.innerHTML = `
+             <div class="flex justify-between items-start mb-4 border-b pb-3 border-slate-100">
+                 <h4 class="text-lg font-semibold m-0 text-slate-800" style="flex: 1; margin-right: 12px;">${q.text}</h4>
+                 <div class="flex gap-2">
+                     <button class="btn btn-sm btn-outline text-primary border-primary hover:bg-indigo-50" 
+                             onclick='editQuestion("${q.id}")'
+                             title="Edit">
+                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                     </button>
+                     <button class="btn btn-sm btn-outline text-danger border-danger hover:bg-red-50" 
+                             onclick="deleteQuestion('${q.id}')"
+                             title="Delete">
+                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                     </button>
+                 </div>
+             </div>
+
+             ${imageHtml}
+
+             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                 ${optionsHtml}
+             </div>
+         `;
+
+        const list = document.getElementById('questionsList');
+        list.appendChild(li);
+    }
+    document.getElementById('showScoreToggle').addEventListener('change', function () {
+        const showScore = this.checked;
+        fetch(`{{ url_for('toggle_score', quiz_id=quiz.id) }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ show_score: showScore })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Settings saved successfully!', 'success');
+                } else {
+                    showToast('Error updating settings: ' + (data.error || 'Unknown error'), 'error');
+                }
+            });
+    });
+
+    // Toggle Reattempts Logic
+    const reattemptToggle = document.getElementById('reattemptToggle');
+    if (reattemptToggle) {
+        reattemptToggle.addEventListener('change', function () {
+            const allow = this.checked;
+            fetch(`/admin/toggle_reattempts/${quizId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allow_reattempts: allow })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(`Reattempts ${allow ? 'enabled' : 'disabled'}`, 'success');
+                    } else {
+                        showToast('Error updating settings: ' + (data.error || 'Unknown error'), 'error');
+                        this.checked = !allow; // Revert
+                    }
+                })
+                .catch(err => {
+                    showToast('Network error', 'error');
+                    this.checked = !allow;
+                });
+        });
+    }
+
+    // Delete Question Logic
+    function deleteQuestion(questionId) {
+        if (!confirm('Are you sure you want to delete this question?')) return;
+
+        fetch(`/admin/delete_question/${questionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`question-${questionId}`).remove();
+                    showToast('Question deleted successfully.', 'success');
+
+                    const list = document.getElementById('questionsList');
+                    if (list.children.length === 0) {
+                        document.getElementById('noQuestionsMsg').style.display = 'block';
+                    }
+                } else {
+                    showToast('Error deleting question: ' + (data.error || 'Unknown error'), 'error');
+                }
+            });
+    }
+
+
+</script>
+{% endblock %}

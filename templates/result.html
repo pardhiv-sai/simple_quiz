@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="text-align: center;">
+    <h2>Quiz Completed!</h2>
+    {% if show_score %}
+    <h3>Your Score: {{ score }} / {{ total }}</h3>
+    <p>Percentage: {{ (score / total * 100)|round(1) }}%</p>
+    {% else %}
+    <h3>Submission Received!</h3>
+    <p>Your responses have been recorded. Scores are hidden for this quiz.</p>
+    {% endif %}
+    <a href="{{ url_for('user_dashboard') }}" class="btn">Back to Dashboard</a>
+</div>
+{% endblock %}

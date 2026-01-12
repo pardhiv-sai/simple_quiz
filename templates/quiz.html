@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* ====== LAYOUT ====== */
+    .quiz-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .quiz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    /* ====== TIMER ====== */
+    .quiz-timer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        font-weight: 600;
+    }
+
+    .quiz-timer.warning {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .quiz-timer.danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    /* ====== PROGRESS ====== */
+    .quiz-progress {
+        width: 100%;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        margin: 14px 0 24px;
+        overflow: hidden;
+    }
+
+    #progressFill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #4f46e5, #22c55e);
+        transition: width 0.4s ease;
+    }
+
+    /* ====== QUESTION CARD ====== */
+    .card {
+        padding: 24px;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .question-wrapper {
+        animation: fadeSlide 0.35s ease;
+    }
+
+    @keyframes fadeSlide {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .question-text {
+        margin-bottom: 20px;
+    }
+
+    /* ====== OPTIONS ====== */
+    .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .option-label {
+        display: flex;
+        align-items: center;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+
+    .option-label:hover {
+        border-color: #6366f1;
+        background: #f5f7ff;
+    }
+
+    .option-input {
+        display: none;
+    }
+
+    .option-label:has(input:checked) {
+        border-color: #22c55e;
+        background: #ecfdf5;
+        font-weight: 600;
+    }
+
+    /* ====== NAV CONTROLS ====== */
+    .quiz-nav-controls {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 16px 0;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .btn-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        background: #4f46e5;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .btn-icon:disabled {
+        background: #c7d2fe;
+        cursor: not-allowed;
+    }
+
+    /* ====== PAGINATION ====== */
+    .quiz-pagination {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .nav-dot {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid #c7d2fe;
+        background: white;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .nav-dot.active {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .nav-dot.answered:not(.active) {
+        background: #22c55e;
+        color: white;
+        border-color: #22c55e;
+    }
+</style>
+
+<div class="quiz-container">
+    <div class="quiz-header">
+        <h2>{{ quiz.title }}</h2>
+        <div class="quiz-timer" id="timerBox">
+            ⏱ <span id="timer">00:00</span>
+        </div>
+    </div>
+
+    <div class="quiz-progress">
+        <div id="progressFill"></div>
+    </div>
+
+    <form action="{{ url_for('submit_quiz', quiz_id=quiz.id) }}" method="POST" id="quizForm">
+
+        {% for question in quiz.questions %}
+        <div class="question-wrapper" id="q-card-{{ loop.index0 }}"
+            style="display: {{ 'block' if loop.first else 'none' }};">
+            <div class="card">
+                <h3 class="question-text">{{ question.text }}</h3>
+
+                {% if question.image_url %}
+                <img src="{{ question.image_url }}"
+                    style="max-width:100%; max-height:300px; border-radius:12px; margin-bottom:16px;">
+                {% endif %}
+
+                <div class="options-list">
+                    {% for option in question.options %}
+                    <label class="option-label">
+                        <input type="radio" class="option-input" name="q-{{ question.id }}" value="{{ option.id }}"
+                            required>
+                        {{ option.text }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="quiz-nav-controls">
+            <button type="button" id="prevBtn" class="btn-icon" disabled onclick="changeQuestion(-1)">←</button>
+            <button type="button" id="submitBtn" class="btn btn-success" style="display:none;"
+                onclick="confirmSubmit()">Submit</button>
+            <button type="button" id="nextBtn" class="btn-icon" onclick="changeQuestion(1)">→</button>
+        </div>
+
+        <div class="quiz-pagination">
+            {% for question in quiz.questions %}
+            <button type="button" class="nav-dot {{ 'active' if loop.first else '' }}" id="nav-dot-{{ loop.index0 }}"
+                onclick="goToQuestion({{ loop.index0 }})">
+                {{ loop.index }}
+            </button>
+            {% endfor %}
+        </div>
+
+    </form>
+</div>
+
+<script>
+    let currentQuestion = 0;
+    const totalQuestions = {{ quiz.questions| length }};
+    let timeRemaining = {{ quiz.duration|default (600) }};
+
+    const timerEl = document.getElementById("timer");
+    const timerBox = document.getElementById("timerBox");
+
+    function updateTimer() {
+        const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+        const s = (timeRemaining % 60).toString().padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+
+        if (timeRemaining <= 60) timerBox.classList.add("danger");
+        else if (timeRemaining <= 180) timerBox.classList.add("warning");
+
+        if (timeRemaining <= 0) {
+            alert("Time is up! Submitting quiz.");
+            document.getElementById("quizForm").submit();
+        }
+        timeRemaining--;
+    }
+    updateTimer();
+    setInterval(updateTimer, 1000);
+
+    function updateProgress() {
+        document.getElementById("progressFill").style.width =
+            ((currentQuestion + 1) / totalQuestions) * 100 + "%";
+    }
+
+    function showQuestion(index) {
+        if (index < 0 || index >= totalQuestions) return;
+
+        document.getElementById(`q-card-${currentQuestion}`).style.display = "none";
+        document.getElementById(`nav-dot-${currentQuestion}`).classList.remove("active");
+
+        currentQuestion = index;
+
+        document.getElementById(`q-card-${currentQuestion}`).style.display = "block";
+        document.getElementById(`nav-dot-${currentQuestion}`).classList.add("active");
+
+        document.getElementById("prevBtn").disabled = currentQuestion === 0;
+
+        document.getElementById("nextBtn").style.display =
+            currentQuestion === totalQuestions - 1 ? "none" : "inline-flex";
+        document.getElementById("submitBtn").style.display =
+            currentQuestion === totalQuestions - 1 ? "inline-flex" : "none";
+
+        updateProgress();
+    }
+
+    function changeQuestion(delta) {
+        showQuestion(currentQuestion + delta);
+    }
+
+    function goToQuestion(index) {
+        showQuestion(index);
+    }
+
+    document.querySelectorAll(".option-input").forEach(input => {
+        input.addEventListener("change", () => {
+            document.getElementById(`nav-dot-${currentQuestion}`)
+                .classList.add("answered");
+        });
+    });
+
+    function confirmSubmit() {
+        const answered = document.querySelectorAll('input.option-input:checked').length;
+        if (answered < totalQuestions) {
+            if (confirm(`You have answered ${answered} out of ${totalQuestions} questions. Do you want to submit?`)) {
+                console.log("Submitting form via confirm");
+                document.getElementById("quizForm").submit();
+            }
+        } else {
+            console.log("Submitting form directly");
+            document.getElementById("quizForm").submit();
+        }
+    }
+
+    updateProgress();
+    if (totalQuestions > 0) showQuestion(0);
+</script>
+{% endblock %}

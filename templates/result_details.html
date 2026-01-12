@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <a href="{{ url_for('quiz_details', quiz_id=result.quiz_id) }}" class="btn btn-outline btn-sm mb-4">
+            &larr; Back to Quiz
+        </a>
+        <h2>Result Details</h2>
+        <p class="text-muted">
+            User: <strong>{{ result.users.username }}</strong> |
+            Score: <strong>{{ result.score }} / {{ result.total_questions }}</strong> |
+            Date: {{ result.completed_at | to_ist }}
+        </p>
+    </div>
+</div>
+
+<div class="result-breakdown">
+    {% for ans in answers %}
+    <div class="card mb-4"
+        style="border-left: 5px solid {{ 'var(--color-success)' if ans.is_correct else 'var(--color-danger)' }};">
+        <div class="mb-4">
+            <h4 class="mb-2">Question {{ loop.index }}</h4>
+            <p class="text-lg font-medium">{{ ans.questions.text }}</p>
+            {% if ans.questions.image_url %}
+            <img src="{{ ans.questions.image_url }}" alt="Question Image"
+                style="max-width: 100%; max-height: 300px; border-radius: var(--radius-md); margin-top: 10px;">
+            {% endif %}
+        </div>
+
+        <div class="options-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for opt in ans.questions.options %}
+            {% set is_selected = (ans.selected_option_id | string == opt.id | string) %}
+            {% set is_correct_opt = opt.is_correct %}
+
+            <div class="p-4 rounded border" style="
+                        position: relative;
+                        {% if is_correct_opt %}
+                            background-color: #ecfdf5; border-color: #059669; color: #065f46;
+                        {% elif is_selected and not ans.is_correct %}
+                            background-color: #fef2f2; border-color: #dc2626; color: #991b1b;
+                        {% else %}
+                            background-color: var(--color-bg); border-color: var(--color-border);
+                        {% endif %}
+                     ">
+                <span class="font-medium">{{ opt.text }}</span>
+
+                {% if is_selected %}
+                <span class="badge"
+                    style="position: absolute; top: -10px; right: 10px; background: {{ 'var(--color-success)' if ans.is_correct else 'var(--color-danger)' }}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">
+                    Student's Choice
+                </span>
+                {% endif %}
+
+                {% if is_correct_opt %}
+                <span class="badge"
+                    style="position: absolute; bottom: -10px; right: 10px; background: var(--color-success); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">
+                    Correct Answer
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-4 text-right">
+            {% if ans.is_correct %}
+            <span class="text-success font-bold">Correct</span>
+            {% else %}
+            <span class="text-danger font-bold">Wrong</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

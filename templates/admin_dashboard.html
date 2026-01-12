@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-6">
+    <h2>Admin Dashboard</h2>
+    <p>Manage your quizzes and view results.</p>
+</div>
+
+<div class="grid grid-cols-1" style="grid-template-columns: 1fr 2fr; gap: 2rem;">
+    <!-- Create Quiz Column -->
+    <div>
+        <div class="card" style="position: sticky; top: 100px;">
+            <h3>Create New Quiz</h3>
+            <form action="{{ url_for('create_quiz') }}" method="POST">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" name="title" required placeholder="e.g., Python Basics">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="4" placeholder="Brief description of the quiz..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Create Quiz</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing Quizzes Column -->
+    <div>
+        <h3 class="mb-4">Existing Quizzes</h3>
+        {% for quiz in quizzes %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h4 class="mb-2"><a href="{{ url_for('quiz_details', quiz_id=quiz.id) }}"
+                            style="color: var(--slate-900); text-decoration: none;">{{ quiz.title }}</a></h4>
+                    <p class="mb-2">{{ quiz.description }}</p>
+                    <div style="font-size: 0.85rem; color: var(--slate-500);">
+                        Average Score: <strong>{{ quiz.avg_score|round(1) if quiz.avg_score else 'N/A' }}%</strong>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="{{ url_for('quiz_details', quiz_id=quiz.id) }}" class="btn btn-outline btn-sm">Manage</a>
+                    <form action="{{ url_for('delete_quiz', quiz_id=quiz.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Delete quiz?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card text-center">
+            <p>No quizzes created yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
